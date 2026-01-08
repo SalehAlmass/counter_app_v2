@@ -12,7 +12,7 @@ class CounterCubit extends Cubit<CounterState> {
   int D = 0;
   
   // Team names list instead of individual variables
-  List<String> teamNames = AppConstants.DEFAULT_TEAM_NAMES;
+  List<String> teamNames = AppConstants.defaultTeamNames;
   
   // Table data: List of rows, each row contains scores for all teams
   List<List<int>> scoreTable = [];
@@ -74,7 +74,7 @@ class CounterCubit extends Cubit<CounterState> {
     B = 0;
     C = 0;
     D = 0;
-    teamNames = List.from(AppConstants.DEFAULT_TEAM_NAMES);
+    teamNames = List.from(AppConstants.defaultTeamNames);
     emit(CounterTeamAState());
   }
 

@@ -141,7 +141,7 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
     return Expanded(
       flex: 2,
       child: Container(
-        padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
         child: QuestionSection(
           onOptionSelected: (option) => setState(() => selectedOption = option),
           onNextQuestion: _handleNextQuestion,
@@ -162,7 +162,7 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
     return Expanded(
       flex: 3,
       child: Container(
-        padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
         child: ResultsTableWidget(
           counterCubit: counterCubit,
           teamNames: teamNames,
@@ -283,7 +283,7 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
           alignment: Alignment.center,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 500),
-            padding: const EdgeInsets.all(AppConstants.LARGE_PADDING),
+            padding: const EdgeInsets.all(AppConstants.largePadding),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Colors.orange, Colors.deepOrangeAccent],

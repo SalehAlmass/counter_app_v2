@@ -9,7 +9,8 @@ class Question {
   final QuestionType type;
   final DateTime? answeredAt;
   final bool? isCorrect;
-
+  final int? categoryId;
+  
   Question({
     required this.id,
     required this.question,
@@ -21,6 +22,7 @@ class Question {
     this.type = QuestionType.multipleChoice,
     this.answeredAt,
     this.isCorrect,
+    this.categoryId = 0,
   });
 
   bool isCorrectAnswer(int selectedIndex) {
@@ -121,7 +123,7 @@ class TeamPerformance {
       : 0.0;
 
   int get averageTimePerQuestion => 
-      questionResults.length > 0 
+      questionResults.isNotEmpty
       ? totalTimeSeconds ~/ questionResults.length 
       : 0;
 }

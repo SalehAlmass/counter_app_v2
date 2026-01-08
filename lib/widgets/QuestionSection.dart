@@ -55,7 +55,7 @@ class _QuestionSectionState extends State<QuestionSection> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -66,7 +66,7 @@ class _QuestionSectionState extends State<QuestionSection> {
         children: [
           // Question header with timer
           Container(
-            padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+            padding: const EdgeInsets.all(AppConstants.defaultPadding),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                colors: [

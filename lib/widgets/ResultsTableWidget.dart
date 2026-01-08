@@ -75,7 +75,7 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
       borderRadius: BorderRadius.circular(16),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(.08),
+          color: Colors.black.withValues(alpha: 0.08),
           blurRadius: 12,
           offset: const Offset(0, 6),
         ),
@@ -85,7 +85,7 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      padding: const EdgeInsets.all(AppConstants.defaultPadding),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -105,7 +105,7 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: AppConstants.HEADING_TEXT_SIZE,
+              fontSize: AppConstants.headingTextSize,
             ),
           ),
         ],
@@ -119,7 +119,7 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
     final teams = widget.teamNames;
 
     return Padding(
-      padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
+      padding: const EdgeInsets.all(AppConstants.defaultPadding),
       child: Wrap(
         spacing: 12,
         runSpacing: 12,

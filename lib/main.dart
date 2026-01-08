@@ -14,7 +14,7 @@ void main() async {
       await DatabaseHelper().database; // Initialize the database
     } catch (e) {
       // Handle database initialization error gracefully
-      print('Database initialization failed: $e');
+      // print('Database initialization failed: $e'); // Removed for production
     }
   }
   

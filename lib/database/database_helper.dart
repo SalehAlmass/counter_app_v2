@@ -240,6 +240,7 @@ class DatabaseHelper {
       explanation: map['explanation'] ?? '',
       difficulty: _intToDifficulty(map['difficulty']),
       timeLimitSeconds: map['time_limit_seconds'],
+      categoryId: map['category_id'],
     );
   }
 

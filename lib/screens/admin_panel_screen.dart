@@ -31,10 +31,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           ),
         ),
         body: const TabBarView(
-          children: [
-            CategoryManagementScreen(),
-            QuestionManagementScreen(),
-          ],
+          children: [CategoryManagementScreen(), QuestionManagementScreen()],
         ),
       ),
     );
@@ -45,7 +42,8 @@ class CategoryManagementScreen extends StatefulWidget {
   const CategoryManagementScreen({super.key});
 
   @override
-  State<CategoryManagementScreen> createState() => _CategoryManagementScreenState();
+  State<CategoryManagementScreen> createState() =>
+      _CategoryManagementScreenState();
 }
 
 class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
@@ -75,9 +73,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       } else {
         // Show error for mobile platform
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -123,9 +121,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -171,9 +169,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -181,26 +179,32 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
 
   Future<void> _deleteCategory(int id, String name) async {
     try {
-      bool confirm = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('تأكيد الحذف'),
-            content: Text('هل أنت متأكد من حذف القسم "$name"؟ سيتم حذف جميع الأسئلة المرتبطة به.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('حذف'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              ),
-            ],
-          );
-        },
-      ) ?? false;
+      bool confirm =
+          await showDialog<bool>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('تأكيد الحذف'),
+                content: Text(
+                  'هل أنت متأكد من حذف القسم "$name"؟ سيتم حذف جميع الأسئلة المرتبطة به.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('إلغاء'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('حذف'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          false;
 
       if (confirm) {
         await _dbHelper.deleteCategory(id);
@@ -216,9 +220,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -247,11 +251,13 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _editCategory(category['id'], category['name']),
+                          onPressed: () =>
+                              _editCategory(category['id'], category['name']),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteCategory(category['id'], category['name']),
+                          onPressed: () =>
+                              _deleteCategory(category['id'], category['name']),
                         ),
                       ],
                     ),
@@ -267,7 +273,8 @@ class QuestionManagementScreen extends StatefulWidget {
   const QuestionManagementScreen({super.key});
 
   @override
-  State<QuestionManagementScreen> createState() => _QuestionManagementScreenState();
+  State<QuestionManagementScreen> createState() =>
+      _QuestionManagementScreenState();
 }
 
 class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
@@ -286,7 +293,7 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
     try {
       questions = await _dbHelper.getAllQuestions();
       categories = await _dbHelper.getAllCategories();
-      
+
       setState(() {});
     } catch (e) {
       // Handle web platform error
@@ -298,13 +305,13 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
           {'id': 3, 'name': 'الدين الإسلامي'},
           {'id': 4, 'name': 'الألغاز'},
         ];
-        
+
         setState(() {});
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -317,7 +324,7 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
         questions = allQuestions.map((q) => q.toJson()).toList();
       } else {
         final categoryQuestions = await _dbHelper.getQuestionsForCategory(
-          categories.firstWhere((cat) => cat['id'] == categoryId)['name']
+          categories.firstWhere((cat) => cat['id'] == categoryId)['name'],
         );
         questions = categoryQuestions.map((q) => q.toJson()).toList();
       }
@@ -329,9 +336,9 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
         setState(() {});
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -357,7 +364,9 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                 if (kIsWeb) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('الإضافة غير مدعومة على الويب')),
+                      const SnackBar(
+                        content: Text('الإضافة غير مدعومة على الويب'),
+                      ),
                     );
                   }
                 } else {
@@ -382,9 +391,9 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -401,7 +410,11 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
             existingCategoryId: question['category_id'],
             onSave: (updatedQ, categoryId) async {
               try {
-                await _dbHelper.updateQuestion(updatedQ.id!, updatedQ, categoryId);
+                await _dbHelper.updateQuestion(
+                  updatedQ.id!,
+                  updatedQ,
+                  categoryId,
+                );
                 if (selectedCategoryId != null) {
                   await _loadQuestionsByCategory(selectedCategoryId);
                 } else {
@@ -412,7 +425,9 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                 if (kIsWeb) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('التحديث غير مدعوم على الويب')),
+                      const SnackBar(
+                        content: Text('التحديث غير مدعوم على الويب'),
+                      ),
                     );
                   }
                 } else {
@@ -437,9 +452,9 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -447,26 +462,30 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
 
   Future<void> _deleteQuestion(int id, String questionText) async {
     try {
-      bool confirm = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('تأكيد الحذف'),
-            content: Text('هل أنت متأكد من حذف السؤال "$questionText"؟'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('حذف'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              ),
-            ],
-          );
-        },
-      ) ?? false;
+      bool confirm =
+          await showDialog<bool>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('تأكيد الحذف'),
+                content: Text('هل أنت متأكد من حذف السؤال "$questionText"؟'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('إلغاء'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('حذف'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          false;
 
       if (confirm) {
         await _dbHelper.deleteQuestion(id);
@@ -486,9 +505,9 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('خطأ: ${e.toString()}')));
         }
       }
     }
@@ -507,10 +526,7 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
               border: OutlineInputBorder(),
             ),
             items: [
-              const DropdownMenuItem(
-                value: null,
-                child: Text('جميع الأقسام'),
-              ),
+              const DropdownMenuItem(value: null, child: Text('جميع الأقسام')),
               ...categories.map(
                 (category) => DropdownMenuItem<int>(
                   value: category['id'] as int? ?? 0,
@@ -537,7 +553,9 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                       margin: const EdgeInsets.all(8.0),
                       child: ExpansionTile(
                         title: Text(question['question']),
-                        subtitle: Text('القسم: ${_getCategoryName(question['category_id'])}'),
+                        subtitle: Text(
+                          'القسم: ${_getCategoryName(question['category_id'] as int?)}',
+                        ),
                         children: [
                           Padding(
                             padding: const EdgeInsets.all(16.0),
@@ -546,15 +564,23 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                               children: [
                                 Text('الخيارات:'),
                                 ...List.generate(4, (i) {
-                                  bool isCorrect = question['correct_answer_index'] != null && 
-                                      i == (question['correct_answer_index'] as int);
+                                  bool isCorrect =
+                                      question['correct_answer_index'] !=
+                                          null &&
+                                      i ==
+                                          (question['correct_answer_index']
+                                              as int);
                                   return Padding(
                                     padding: const EdgeInsets.only(left: 16.0),
                                     child: Row(
                                       children: [
                                         Icon(
-                                          isCorrect ? Icons.check_circle : Icons.circle_outlined,
-                                          color: isCorrect ? Colors.green : Colors.grey,
+                                          isCorrect
+                                              ? Icons.check_circle
+                                              : Icons.circle_outlined,
+                                          color: isCorrect
+                                              ? Colors.green
+                                              : Colors.grey,
                                           size: 16,
                                         ),
                                         const SizedBox(width: 8),
@@ -562,8 +588,12 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                                           child: Text(
                                             '${['أ', 'ب', 'ج', 'د'][i]}) ${question['option${i + 1}'] ?? 'N/A'}',
                                             style: TextStyle(
-                                              color: isCorrect ? Colors.green : Colors.black,
-                                              fontWeight: isCorrect ? FontWeight.bold : FontWeight.normal,
+                                              color: isCorrect
+                                                  ? Colors.green
+                                                  : Colors.black,
+                                              fontWeight: isCorrect
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
                                             ),
                                           ),
                                         ),
@@ -572,21 +602,36 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
                                   );
                                 }),
                                 const SizedBox(height: 8),
-                                Text('الصعوبة: ${_getDifficultyText(question['difficulty'] ?? 1)}'),
-                                Text('الوقت: ${question['time_limit_seconds'] ?? 30} ثانية'),
-                                if ((question['explanation'] as String?)?.isNotEmpty == true)
+                                Text(
+                                  'الصعوبة: ${_getDifficultyText(question['difficulty'] ?? 1)}',
+                                ),
+                                Text(
+                                  'الوقت: ${question['time_limit_seconds'] ?? 30} ثانية',
+                                ),
+                                if ((question['explanation'] as String?)
+                                        ?.isNotEmpty ==
+                                    true)
                                   Text('الشرح: ${question['explanation']}'),
                                 const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue),
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.blue,
+                                      ),
                                       onPressed: () => _editQuestion(question),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () => _deleteQuestion(question['id'], question['question']),
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () => _deleteQuestion(
+                                        question['id'],
+                                        question['question'],
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -615,17 +660,31 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
     );
   }
 
-  String _getCategoryName(int categoryId) {
+  String _getCategoryName(int? categoryId) {
+    print('categoryId: $categoryId');
+    print('categories: $categories');
+
+    if (categoryId == null) return 'غير محدد';
+
     final category = categories.firstWhere(
       (cat) => cat['id'] == categoryId,
       orElse: () => {'name': 'غير محدد'},
     );
-    return category['name'];
+
+    return category['name']?.toString() ?? 'غير محدد';
   }
+
+  // String _getCategoryName(int categoryId) {
+  //   final category = categories.firstWhere(
+  //     (cat) => cat['id'] == categoryId,
+  //     orElse: () => {'name': 'غير محدد'},
+  //   );
+  //   return category['name'];
+  // }
 
   String _getDifficultyText(dynamic difficultyValue) {
     int difficultyInt = 1; // Default to medium
-    
+
     if (difficultyValue is int) {
       difficultyInt = difficultyValue;
     } else if (difficultyValue is String) {
@@ -633,7 +692,7 @@ class _QuestionManagementScreenState extends State<QuestionManagementScreen> {
     } else if (difficultyValue == null) {
       difficultyInt = 1; // Default to medium if null
     }
-    
+
     switch (difficultyInt) {
       case 0:
         return 'سهل';
@@ -691,12 +750,18 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
       _correctAnswerIndex = widget.existingQuestion!.correctAnswerIndex;
       _difficulty = widget.existingQuestion!.difficulty.index;
       _timeLimit = widget.existingQuestion!.timeLimitSeconds;
-      _selectedCategory = widget.existingCategoryId ?? (widget.categories.isNotEmpty ? (widget.categories[0]['id'] as int? ?? 0) : 0);
+      _selectedCategory =
+          widget.existingCategoryId ??
+          (widget.categories.isNotEmpty
+              ? (widget.categories[0]['id'] as int? ?? 0)
+              : 0);
     } else if (widget.existingCategoryId != null) {
       _selectedCategory = widget.existingCategoryId!;
     } else {
       // Set default category if available
-      _selectedCategory = widget.categories.isNotEmpty ? (widget.categories[0]['id'] as int? ?? 0) : 0;
+      _selectedCategory = widget.categories.isNotEmpty
+          ? (widget.categories[0]['id'] as int? ?? 0)
+          : 0;
     }
   }
 
@@ -704,7 +769,9 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existingQuestion != null ? 'تعديل السؤال' : 'إضافة سؤال'),
+        title: Text(
+          widget.existingQuestion != null ? 'تعديل السؤال' : 'إضافة سؤال',
+        ),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -722,12 +789,14 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                   labelText: 'القسم',
                   border: OutlineInputBorder(),
                 ),
-                items: widget.categories.map(
-                  (category) => DropdownMenuItem<int>(
-                    value: category['id'] as int? ?? 0,
-                    child: Text(category['name']),
-                  ),
-                ).toList(),
+                items: widget.categories
+                    .map(
+                      (category) => DropdownMenuItem<int>(
+                        value: category['id'] as int? ?? 0,
+                        child: Text(category['name']),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedCategory = value ?? 0;
@@ -762,7 +831,8 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                   suffixIcon: Radio<int>(
                     value: 0,
                     groupValue: _correctAnswerIndex,
-                    onChanged: (value) => setState(() => _correctAnswerIndex = value ?? 0),
+                    onChanged: (value) =>
+                        setState(() => _correctAnswerIndex = value ?? 0),
                   ),
                 ),
                 validator: (value) {
@@ -782,7 +852,8 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                   suffixIcon: Radio<int>(
                     value: 1,
                     groupValue: _correctAnswerIndex,
-                    onChanged: (value) => setState(() => _correctAnswerIndex = value ?? 0),
+                    onChanged: (value) =>
+                        setState(() => _correctAnswerIndex = value ?? 0),
                   ),
                 ),
                 validator: (value) {
@@ -802,7 +873,8 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                   suffixIcon: Radio<int>(
                     value: 2,
                     groupValue: _correctAnswerIndex,
-                    onChanged: (value) => setState(() => _correctAnswerIndex = value ?? 0),
+                    onChanged: (value) =>
+                        setState(() => _correctAnswerIndex = value ?? 0),
                   ),
                 ),
                 validator: (value) {
@@ -822,7 +894,8 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                   suffixIcon: Radio<int>(
                     value: 3,
                     groupValue: _correctAnswerIndex,
-                    onChanged: (value) => setState(() => _correctAnswerIndex = value ?? 0),
+                    onChanged: (value) =>
+                        setState(() => _correctAnswerIndex = value ?? 0),
                   ),
                 ),
                 validator: (value) {
@@ -852,19 +925,22 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                   FilterChip(
                     label: const Text('سهل'),
                     selected: _difficulty == 0,
-                    onSelected: (selected) => setState(() => _difficulty = selected ? 0 : 1),
+                    onSelected: (selected) =>
+                        setState(() => _difficulty = selected ? 0 : 1),
                   ),
                   const SizedBox(width: 8),
                   FilterChip(
                     label: const Text('متوسط'),
                     selected: _difficulty == 1,
-                    onSelected: (selected) => setState(() => _difficulty = selected ? 1 : 1),
+                    onSelected: (selected) =>
+                        setState(() => _difficulty = selected ? 1 : 1),
                   ),
                   const SizedBox(width: 8),
                   FilterChip(
                     label: const Text('صعب'),
                     selected: _difficulty == 2,
-                    onSelected: (selected) => setState(() => _difficulty = selected ? 2 : 1),
+                    onSelected: (selected) =>
+                        setState(() => _difficulty = selected ? 2 : 1),
                   ),
                 ],
               ),
@@ -878,7 +954,8 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                 max: 120,
                 divisions: 11,
                 label: '${_timeLimit.toInt()} ثانية',
-                onChanged: (value) => setState(() => _timeLimit = value.toInt()),
+                onChanged: (value) =>
+                    setState(() => _timeLimit = value.toInt()),
               ),
               Text('$_timeLimit ثانية', textAlign: TextAlign.center),
               const SizedBox(height: 16),
@@ -888,7 +965,9 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     Question question = Question(
-                      id: widget.existingQuestion?.id ?? 0, // Provide a default value
+                      id:
+                          widget.existingQuestion?.id ??
+                          0, // Provide a default value
                       question: _questionController.text,
                       options: [
                         _option1Controller.text,
@@ -909,7 +988,11 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
                 ),
-                child: Text(widget.existingQuestion != null ? 'تحديث السؤال' : 'حفظ السؤال'),
+                child: Text(
+                  widget.existingQuestion != null
+                      ? 'تحديث السؤال'
+                      : 'حفظ السؤال',
+                ),
               ),
             ],
           ),

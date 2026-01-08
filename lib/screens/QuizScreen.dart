@@ -29,7 +29,6 @@ class _EnhancedQuizScreenState extends State<EnhancedQuizScreen>
   bool questionCompleted = false;
   late CompetitionSession session;
   late AnimationController _timerController;
-  late Animation<double> _timerAnimation;
   Timer? _questionTimer;
   int timeRemaining = 0;
 
@@ -57,7 +56,6 @@ class _EnhancedQuizScreenState extends State<EnhancedQuizScreen>
       duration: const Duration(seconds: 30),
       vsync: this,
     );
-    _timerAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(_timerController);
   }
 
   void _startQuestionTimer() {
@@ -458,8 +456,8 @@ class _EnhancedQuizScreenState extends State<EnhancedQuizScreen>
       bool isCorrect = currentQuestion.isCorrectAnswer(selectedOption);
       int timeTaken = currentQuestion.timeLimitSeconds - timeRemaining;
       
-      Team? team = widget.teams.firstWhere((t) => t.name == teamName);
-      if (team != null) {
+      Team team = widget.teams.firstWhere((t) => t.name == teamName);
+      {
         int points = 0;
         if (isCorrect) {
           points = currentQuestion.getPoints();

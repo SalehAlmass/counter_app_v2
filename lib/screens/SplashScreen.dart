@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             boxShadow: const [
                               BoxShadow(
                                 color: Colors.black26,
