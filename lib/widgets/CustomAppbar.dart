@@ -1,13 +1,12 @@
 import 'dart:async';
+import 'package:counter_app/screens/CategorySelectionScreen.dart';
 import 'package:flutter/material.dart';
 
 class CustomAppbar extends StatefulWidget implements PreferredSizeWidget {
   final Duration initialDuration;
 
-  const CustomAppbar({
-    Key? key,
-    required this.initialDuration,
-  }) : super(key: key);
+  const CustomAppbar({Key? key, required this.initialDuration})
+    : super(key: key);
 
   @override
   State<CustomAppbar> createState() => _CustomAppbarState();
@@ -30,18 +29,19 @@ class _CustomAppbarState extends State<CustomAppbar>
     remainingTime = widget.initialDuration;
 
     // Animation controller للوقت الأخير
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-      lowerBound: 1.0,
-      upperBound: 1.3,
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _animController.reverse();
-        } else if (status == AnimationStatus.dismissed) {
-          _animController.forward();
-        }
-      });
+    _animController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 500),
+          lowerBound: 1.0,
+          upperBound: 1.3,
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _animController.reverse();
+          } else if (status == AnimationStatus.dismissed) {
+            _animController.forward();
+          }
+        });
   }
 
   @override
@@ -90,9 +90,12 @@ class _CustomAppbarState extends State<CustomAppbar>
 
   @override
   Widget build(BuildContext context) {
-    bool lastTen = remainingTime.inSeconds <= 10;
+   // bool lastTen = remainingTime.inSeconds <= 10;
 
     return AppBar(
+      leading: IconButton(icon: Icon(Icons.arrow_back, color: Colors.white), onPressed: () {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CategorySelectionScreen()));
+      }),
       centerTitle: true,
       backgroundColor: Colors.transparent,
       flexibleSpace: Container(
@@ -118,81 +121,18 @@ class _CustomAppbarState extends State<CustomAppbar>
           ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: const [
-                Icon(Icons.emoji_events, color: Colors.white, size: 24),
-                SizedBox(width: 6),
-                Text(
-                  'لوحة النتائج',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                    fontSize: 18,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: startTimer,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1976D2),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'أبدا',
-                    style: TextStyle(color: Colors.white, fontSize: 10),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                ScaleTransition(
-                  scale: lastTen ? _animController : AlwaysStoppedAnimation(1.0),
-                  child: Text(
-                    formatTime(remainingTime),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: lastTen ? Colors.redAccent : Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                ElevatedButton(
-                  onPressed: resetTimer,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF64B5F6),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'إعادة',
-                    style: TextStyle(color: Colors.white, fontSize: 10),
-                  ),
-                ),
-              ],
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.emoji_events, color: Colors.white, size: 24),
+            SizedBox(width: 6),
+            Text(
+              'مسابقة حلقتي',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+                fontSize: 18,
+                color: Colors.white,
+              ),
             ),
           ],
         ),
