@@ -86,7 +86,6 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
         String winner = counterCubit.getWinner();
         int winnerScore = counterCubit.getWinnerScore();
         List<String> teamNames = counterCubit.getTeamNames();
-
         return Scaffold(
           appBar: CustomAppbar(initialDuration: const Duration(minutes: 2)),
           body: Stack(

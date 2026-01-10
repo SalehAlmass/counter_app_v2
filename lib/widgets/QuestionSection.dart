@@ -12,7 +12,9 @@ class QuestionSection extends StatefulWidget {
   final int timeRemaining;
   final bool showCorrectAnswerOnly;
   final bool isTimeExpired;
-  final Function()? onTimerTap; // Add timer tap callback
+  final Function()? onTimerTap;
+  final String? categoryName;
+
 
   const QuestionSection({
     super.key,
@@ -25,7 +27,8 @@ class QuestionSection extends StatefulWidget {
     this.timeRemaining = 30,
     this.showCorrectAnswerOnly = false,
     this.isTimeExpired = false,
-    this.onTimerTap, // Add timer tap parameter
+    this.onTimerTap,
+    this.categoryName
   });
 
   @override
@@ -37,19 +40,18 @@ class _QuestionSectionState extends State<QuestionSection> {
 
   @override
   Widget build(BuildContext context) {
-    // Use provided question or fallback to sample data
-    String questionText =
-        widget.currentQuestion?.question ??
-        'هذا هو نص السؤال الذي سيتم عرضه هنا. يمكن أن يكون السؤال طويلاً ويحتوي على عدة أسطر.';
+    final question = widget.currentQuestion;
 
-    List<String> options =
-        widget.currentQuestion?.options ??
-        ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث', 'الخيار الرابع'];
-
-    int correctAnswerIndex = widget.currentQuestion?.correctAnswerIndex ?? 0;
+    if (question == null) {
+      return const Center(
+        child: Text(
+          'لا يوجد سؤال لعرضه',
+          style: TextStyle(fontSize: 18),
+        ),
+      );
+    }
 
     return Container(
-      //padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -62,191 +64,135 @@ class _QuestionSectionState extends State<QuestionSection> {
         ],
       ),
       child: Column(
-        // mainAxisSize: MainAxisSize.min,
         children: [
-          // Question header with timer
+          /// ===== Header =====
           Container(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-               colors: [
-              Color(0xFF2196F3), // أزرق متوسط
-              Color(0xFF1565C0), // أزرق غامق
-            ],
+                colors: [
+                  Color(0xFF2196F3),
+                  Color(0xFF1565C0),
+                ],
               ),
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-
                 Text(
                   '${widget.currentQuestionIndex + 1}/${widget.totalQuestions}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
+                  style: const TextStyle(color: Colors.white70),
                 ),
-                
-               
-                SizedBox(width: 12),
+
+                /// اسم القسم
                 Text(
-                  'الأسئلة',
-                  style: TextStyle(
-                    fontSize: 20,
+                  "${widget.categoryName}",
+                  style: const TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-            
-                 
-                if (!widget.isTimeExpired && widget.timeRemaining > 0) ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
+
+                /// Timer
+                InkWell(
+                  onTap: widget.onTimerTap,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: widget.timeRemaining < 10
-                          ? Colors.red.withValues(alpha: 0.7)
-                          : Colors.white.withValues(alpha: 0.3),
+                      color: widget.isTimeExpired
+                          ? Colors.red
+                          : widget.timeRemaining < 10
+                              ? Colors.red.withValues(alpha: 0.7)
+                              : Colors.white.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: InkWell(
-                      onTap: widget.onTimerTap,
-                      child: Text(
-                        '${widget.timeRemaining} ثانية',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ] else if (widget.isTimeExpired) ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'انتهى الوقت',
-                      style: TextStyle(
-                        fontSize: 14,
+                    child: Text(
+                      widget.isTimeExpired
+                          ? 'انتهى الوقت'
+                          : '${widget.timeRemaining} ث',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ],
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
 
-          // Question text
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Text(
-              questionText,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                height: 1.5,
+          /// ===== Content (Scrollable) =====
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
+              child: Column(
+                children: [
+                  /// السؤال
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Text(
+                      question.question,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  /// الخيارات
+                  Column(
+                    children: question.options.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final option = entry.value;
+
+                      return _buildOption(
+                        option: option,
+                        isCorrect: index == question.correctAnswerIndex,
+                        isSelected: selectedOption == option,
+                        showCorrectOnly: widget.showCorrectAnswerOnly,
+                        isDisabled: widget.isTimeExpired ||
+                            widget.showCorrectAnswerOnly,
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
             ),
           ),
 
-          const SizedBox(height: 24),
-
-          // Options with correct answer highlighting
-          Column(
-            children: options.asMap().entries.map((entry) {
-              int index = entry.key;
-              String option = entry.value;
-              return _buildOption(
-                option: option,
-                optionIndex: index,
-                isCorrect: index == correctAnswerIndex,
-                isSelected: selectedOption == option,
-                showCorrectOnly: widget.showCorrectAnswerOnly,
-                isDisabled:
-                    widget.isTimeExpired || widget.showCorrectAnswerOnly,
-              );
-            }).toList(),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Navigation buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: widget.currentQuestionIndex > 0
-                    ? widget.onPreviousQuestion
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[600],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('السابق'),
-              ),
-              if (!widget.isTimeExpired)
+          /// ===== Navigation =====
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
                 ElevatedButton(
-                  onPressed: selectedOption != null
+                  onPressed: widget.currentQuestionIndex > 0
+                      ? widget.onPreviousQuestion
+                      : null,
+                  child: const Text('السابق'),
+                ),
+                ElevatedButton(
+                  onPressed: widget.isTimeExpired || selectedOption != null
                       ? widget.onNextQuestion
                       : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('التالي'),
-                )
-              else
-                ElevatedButton(
-                  onPressed: widget.onNextQuestion,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('متابعة'),
+                  child:
+                      Text(widget.isTimeExpired ? 'متابعة' : 'التالي'),
                 ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -255,84 +201,45 @@ class _QuestionSectionState extends State<QuestionSection> {
 
   Widget _buildOption({
     required String option,
-    required int optionIndex,
     required bool isCorrect,
     required bool isSelected,
     required bool showCorrectOnly,
     required bool isDisabled,
   }) {
-    bool showAsCorrect = showCorrectOnly && isCorrect;
-    bool showAsSelected = isSelected && !showCorrectOnly;
-    bool showNormal = !showAsCorrect && !showAsSelected;
+    Color color = Colors.grey[50]!;
+    Color border = Colors.grey[300]!;
+    IconData icon = Icons.radio_button_unchecked;
 
-    Color backgroundColor;
-    Color borderColor;
-    Color textColor;
-    IconData? icon;
-
-    if (showAsCorrect) {
-      backgroundColor = Colors.green[100]!;
-      borderColor = Colors.green;
-      textColor = Colors.green[800]!;
+    if (showCorrectOnly && isCorrect) {
+      color = Colors.green[100]!;
+      border = Colors.green;
       icon = Icons.check_circle;
-    } else if (showAsSelected) {
-      backgroundColor = Colors.blue[100]!;
-      borderColor = Colors.blue;
-      textColor = Colors.blue[800]!;
+    } else if (isSelected) {
+      color = Colors.blue[100]!;
+      border = Colors.blue;
       icon = Icons.radio_button_checked;
-    } else if (showNormal) {
-      backgroundColor = Colors.grey[50]!;
-      borderColor = Colors.grey[300]!;
-      textColor = Colors.black87;
-      icon = Icons.radio_button_unchecked;
-    } else {
-      // Disabled state
-      backgroundColor = Colors.grey[100]!;
-      borderColor = Colors.grey[300]!;
-      textColor = Colors.grey[500]!;
-      icon = isCorrect ? Icons.check : Icons.radio_button_unchecked;
     }
 
     return AbsorbPointer(
       absorbing: isDisabled,
       child: GestureDetector(
         onTap: () {
-          if (!isDisabled) {
-            setState(() {
-              selectedOption = option;
-            });
-            widget.onOptionSelected(option);
-          }
+          setState(() => selectedOption = option);
+          widget.onOptionSelected(option);
         },
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: backgroundColor,
+            color: color,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: borderColor,
-              width: showAsCorrect || showAsSelected ? 2 : 1,
-            ),
+            border: Border.all(color: border),
           ),
           child: Row(
             children: [
-              Icon(icon, color: borderColor, size: 24),
+              Icon(icon, color: border),
               const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  option,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: showAsCorrect || showAsSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                    color: textColor,
-                  ),
-                ),
-              ),
-              if (showAsCorrect)
-                const Icon(Icons.emoji_events, color: Colors.green, size: 20),
+              Expanded(child: Text(option)),
             ],
           ),
         ),

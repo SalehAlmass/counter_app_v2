@@ -10,6 +10,7 @@ class Question {
   final DateTime? answeredAt;
   final bool? isCorrect;
   final int? categoryId;
+ 
   
   Question({
     required this.id,
@@ -23,6 +24,7 @@ class Question {
     this.answeredAt,
     this.isCorrect,
     this.categoryId = 0,
+
   });
 
   bool isCorrectAnswer(int selectedIndex) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:counter_app/database/database_helper.dart';
 import 'package:counter_app/models/question_model.dart';
 import 'package:counter_app/screens/PointsCounterScreen.dart';
 import 'package:counter_app/screens/admin_panel_screen.dart';
@@ -11,37 +12,134 @@ class CategorySelectionScreen extends StatefulWidget {
 }
 
 class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
-  // Question categories
-  final List<Map<String, dynamic>> categories = [
-    {
-      'title': 'الرياضيات',
-      'icon': Icons.calculate,
-      'color': Colors.blue,
-      'description': 'اختبار المهارات الرياضية والحسابية',
-      'questions': QuizData.getMathQuestions(),
-    },
-    {
-      'title': 'الثقافة العامة',
-      'icon': Icons.public,
-      'color': Colors.green,
-      'description': 'أسئلة عن التاريخ والجغرافيا والثقافة',
-      'questions': QuizData.getGeneralKnowledgeQuestions(),
-    },
-    {
-      'title': 'الدين الإسلامي',
-      'icon': Icons.mosque,
-      'color': Colors.orange,
-      'description': 'أسئلة عن العقيدة والأحكام الشرعية',
-      'questions': QuizData.getReligiousQuestions(),
-    },
-    {
-      'title': 'الألغاز',
-      'icon': Icons.psychology,
-      'color': Colors.purple,
-      'description': 'ألغاز ذهنية وتحديات فكرية',
-      'questions': QuizData.getRiddlesQuestions(),
-    },
-  ];
+  List<Map<String, dynamic>> categories = [];
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  bool _isLoading = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadCategoriesFromDatabase();
+  }
+  
+  Future<void> _loadCategoriesFromDatabase() async {
+    try {
+      final dbCategories = await _dbHelper.getAllCategories();
+      
+      // Map database categories to the format expected by the UI
+      List<Map<String, dynamic>> mappedCategories = dbCategories.map((dbCat) {
+        String title = dbCat['name'] ?? 'Unknown Category';
+        
+        // Assign icons and colors based on category name
+        IconData icon = _getIconForCategory(title);
+        Color color = _getColorForCategory(title);
+        String description = _getDescriptionForCategory(title);
+        
+        return {
+          'title': title,
+          'icon': icon,
+          'color': color,
+          'description': description,
+          'id': dbCat['id'], // Store the database ID
+        };
+      }).toList();
+      
+      // If no categories found in database, use fallback
+      if (mappedCategories.isEmpty) {
+        mappedCategories = _getDefaultCategories();
+      }
+      
+      setState(() {
+        categories = mappedCategories;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading categories from database: $e');
+      // On error, use fallback categories
+      setState(() {
+        categories = _getDefaultCategories();
+        _isLoading = false;
+      });
+    }
+  }
+  
+  IconData _getIconForCategory(String title) {
+    switch (title) {
+      case 'الرياضيات':
+        return Icons.calculate;
+      case 'الثقافة العامة':
+        return Icons.public;
+      case 'الدين الإسلامي':
+        return Icons.mosque;
+      case 'الألغاز':
+        return Icons.psychology;
+      default:
+        return Icons.category;
+    }
+  }
+  
+  Color _getColorForCategory(String title) {
+    switch (title) {
+      case 'الرياضيات':
+        return Colors.blue;
+      case 'الثقافة العامة':
+        return Colors.green;
+      case 'الدين الإسلامي':
+        return Colors.orange;
+      case 'الألغاز':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+  
+  String _getDescriptionForCategory(String title) {
+    switch (title) {
+      case 'الرياضيات':
+        return 'اختبار المهارات الرياضية والحسابية';
+      case 'الثقافة العامة':
+        return 'أسئلة عن التاريخ والجغرافيا والثقافة';
+      case 'الدين الإسلامي':
+        return 'أسئلة عن العقيدة والأحكام الشرعية';
+      case 'الألغاز':
+        return 'ألغاز ذهنية وتحديات فكرية';
+      default:
+        return 'قسم عام';
+    }
+  }
+  
+  List<Map<String, dynamic>> _getDefaultCategories() {
+    return [
+      {
+        'title': 'الرياضيات',
+        'icon': Icons.calculate,
+        'color': Colors.blue,
+        'description': 'اختبار المهارات الرياضية والحسابية',
+        'id': 1,
+      },
+      {
+        'title': 'الثقافة العامة',
+        'icon': Icons.public,
+        'color': Colors.green,
+        'description': 'أسئلة عن التاريخ والجغرافيا والثقافة',
+        'id': 2,
+      },
+      {
+        'title': 'الدين الإسلامي',
+        'icon': Icons.mosque,
+        'color': Colors.orange,
+        'description': 'أسئلة عن العقيدة والأحكام الشرعية',
+        'id': 3,
+      },
+      {
+        'title': 'الألغاز',
+        'icon': Icons.psychology,
+        'color': Colors.purple,
+        'description': 'ألغاز ذهنية وتحديات فكرية',
+        'id': 4,
+      },
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,18 +191,20 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
               
               // Categories Grid
               Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    return _buildCategoryCard(categories[index]);
-                  },
-                ),
+                child: _isLoading 
+                  ? const Center(child: CircularProgressIndicator())
+                  : GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.85,
+                      ),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        return _buildCategoryCard(categories[index]);
+                      },
+                    ),
               ),
             ],
           ),
@@ -197,12 +297,11 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
   }
 
   void _selectCategory(Map<String, dynamic> category) {
-    // Navigate to main app with selected category questions
+    // Navigate to main app with selected category
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => PointsCounterScreen(
-          initialQuestions: category['questions'] as List<Question>,
           categoryName: category['title'] as String,
         ),
       ),

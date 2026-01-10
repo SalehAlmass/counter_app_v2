@@ -93,6 +93,16 @@ class _CustomAppbarState extends State<CustomAppbar>
    // bool lastTen = remainingTime.inSeconds <= 10;
 
     return AppBar(
+      // actions: [
+      //   Text(
+      //     widget.category['name'] ?? '',
+      //     style: const TextStyle(
+      //       color: Colors.white,
+      //       fontSize: 18,
+      //       fontWeight: FontWeight.bold,
+      //     ),
+      //   ),
+      // ],
       leading: IconButton(icon: Icon(Icons.arrow_back, color: Colors.white), onPressed: () {
         Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CategorySelectionScreen()));
       }),
