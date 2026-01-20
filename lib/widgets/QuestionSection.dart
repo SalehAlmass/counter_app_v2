@@ -87,7 +87,7 @@ class _QuestionSectionState extends State<QuestionSection> {
 
                 /// اسم القسم
                 Text(
-                  "${widget.categoryName}",
+                  question.category,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

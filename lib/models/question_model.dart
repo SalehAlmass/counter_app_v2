@@ -10,8 +10,8 @@ class Question {
   final DateTime? answeredAt;
   final bool? isCorrect;
   final int? categoryId;
- 
-  
+  final String category;
+
   Question({
     required this.id,
     required this.question,
@@ -23,8 +23,8 @@ class Question {
     this.type = QuestionType.multipleChoice,
     this.answeredAt,
     this.isCorrect,
-    this.categoryId = 0,
-
+    this.categoryId,
+    this.category = 'General',
   });
 
   bool isCorrectAnswer(int selectedIndex) {
@@ -33,11 +33,10 @@ class Question {
 
   int getPoints() {
     int basePoints = _getBasePoints();
-    // Bonus points for quick answers (within 50% of time limit)
     if (answeredAt != null) {
       int timeTaken = DateTime.now().difference(answeredAt!).inSeconds;
       if (timeTaken <= (timeLimitSeconds ~/ 2)) {
-        basePoints += 2; // Speed bonus
+        basePoints += 2;
       }
     }
     return basePoints;
@@ -65,6 +64,8 @@ class Question {
     QuestionType? type,
     DateTime? answeredAt,
     bool? isCorrect,
+    int? categoryId,
+    String? category,
   }) {
     return Question(
       id: id ?? this.id,
@@ -77,22 +78,22 @@ class Question {
       type: type ?? this.type,
       answeredAt: answeredAt ?? this.answeredAt,
       isCorrect: isCorrect ?? this.isCorrect,
+      categoryId: categoryId ?? this.categoryId,
+      category: category ?? this.category,
     );
   }
 
-  // Convert Question object to Map for database storage
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'question': question,
-      'option1': options[0],
-      'option2': options[1],
-      'option3': options[2],
-      'option4': options[3],
+      'options': options,
       'correct_answer_index': correctAnswerIndex,
       'explanation': explanation,
       'difficulty': difficulty.index,
       'time_limit_seconds': timeLimitSeconds,
+      'category_id': categoryId,
+      'category': category,
     };
   }
 }
@@ -102,115 +103,28 @@ enum QuestionType { multipleChoice, trueFalse, imageBased }
 
 class TeamPerformance {
   final String teamName;
-  final int totalScore;
+  final int score;
   final int correctAnswers;
   final int incorrectAnswers;
   final int totalTimeSeconds;
-  final Map<QuestionDifficulty, int> scoreByDifficulty;
-  final List<QuestionResult> questionResults;
+  final double accuracy;
+  final double averageTimePerQuestion;
 
   TeamPerformance({
     required this.teamName,
-    required this.totalScore,
+    required this.score,
     required this.correctAnswers,
     required this.incorrectAnswers,
     required this.totalTimeSeconds,
-    required this.scoreByDifficulty,
-    required this.questionResults,
-  });
+  }) : 
+    accuracy = (correctAnswers + incorrectAnswers) > 0
+        ? (correctAnswers / (correctAnswers + incorrectAnswers)) * 100
+        : 0.0,
+    averageTimePerQuestion = correctAnswers + incorrectAnswers > 0
+        ? totalTimeSeconds / (correctAnswers + incorrectAnswers)
+        : 0.0;
 
-  double get accuracy => 
-      (correctAnswers + incorrectAnswers) > 0 
-      ? (correctAnswers / (correctAnswers + incorrectAnswers)) * 100
-      : 0.0;
-
-  int get averageTimePerQuestion => 
-      questionResults.isNotEmpty
-      ? totalTimeSeconds ~/ questionResults.length 
-      : 0;
-}
-
-class QuestionResult {
-  final Question question;
-  final int selectedOptionIndex;
-  final DateTime answeredAt;
-  final int timeTakenSeconds;
-  final bool isCorrect;
-  final int pointsEarned;
-
-  QuestionResult({
-    required this.question,
-    required this.selectedOptionIndex,
-    required this.answeredAt,
-    required this.timeTakenSeconds,
-    required this.isCorrect,
-    required this.pointsEarned,
-  });
-}
-
-class CompetitionSession {
-  final String sessionId;
-  final List<Team> teams;
-  final List<Question> questions;
-  final DateTime startTime;
-  late DateTime endTime;
-  final Map<String, List<QuestionResult>> teamResults;
-  bool isActive = true;
-
-  CompetitionSession({
-    required this.sessionId,
-    required this.teams,
-    required this.questions,
-    required this.startTime,
-    required this.teamResults,
-  });
-
-  void finishSession() {
-    endTime = DateTime.now();
-    isActive = false;
-  }
-
-  Duration get duration => endTime.difference(startTime);
-
-  List<TeamPerformance> getTeamPerformances() {
-    List<TeamPerformance> performances = [];
-    
-    for (var team in teams) {
-      List<QuestionResult> results = teamResults[team.name] ?? [];
-      
-      int totalScore = results.fold(0, (sum, result) => sum + result.pointsEarned);
-      int correctAnswers = results.where((result) => result.isCorrect).length;
-      int incorrectAnswers = results.where((result) => !result.isCorrect).length;
-      int totalTime = results.fold(0, (sum, result) => sum + result.timeTakenSeconds);
-      
-      Map<QuestionDifficulty, int> scoreByDifficulty = {
-        QuestionDifficulty.easy: 0,
-        QuestionDifficulty.medium: 0,
-        QuestionDifficulty.hard: 0,
-      };
-      
-      for (var result in results) {
-        if (result.isCorrect) {
-          scoreByDifficulty[result.question.difficulty] = 
-              scoreByDifficulty[result.question.difficulty]! + result.pointsEarned;
-        }
-      }
-      
-      performances.add(TeamPerformance(
-        teamName: team.name,
-        totalScore: totalScore,
-        correctAnswers: correctAnswers,
-        incorrectAnswers: incorrectAnswers,
-        totalTimeSeconds: totalTime,
-        scoreByDifficulty: scoreByDifficulty,
-        questionResults: results,
-      ));
-    }
-    
-    // Sort by score descending
-    performances.sort((a, b) => b.totalScore.compareTo(a.totalScore));
-    return performances;
-  }
+  int get totalScore => score;
 }
 
 class Team {
@@ -242,10 +156,10 @@ class Team {
     totalTimeSeconds += seconds;
   }
 
-  double get accuracy => 
-      (correctAnswers + incorrectAnswers) > 0 
-      ? (correctAnswers / (correctAnswers + incorrectAnswers)) * 100
-      : 0.0;
+  double get accuracy =>
+      (correctAnswers + incorrectAnswers) > 0
+          ? (correctAnswers / (correctAnswers + incorrectAnswers)) * 100
+          : 0.0;
 
   Team copyWith({
     String? name,
@@ -282,10 +196,85 @@ class TeamMember {
     correctAnswers++;
   }
 
-  double get accuracy => 
-      answeredQuestions > 0 
-      ? (correctAnswers / answeredQuestions) * 100
-      : 0.0;
+  double get accuracy =>
+      answeredQuestions > 0
+          ? (correctAnswers / answeredQuestions) * 100
+          : 0.0;
+}
+
+class CompetitionSession {
+  final String sessionId;
+  final List<Team> teams;
+  final List<Question> questions;
+  final DateTime startTime;
+  final Map<String, List<QuestionResult>> teamResults;
+
+  CompetitionSession({
+    required this.sessionId,
+    required this.teams,
+    required this.questions,
+    required this.startTime,
+    required this.teamResults,
+  });
+
+  void finishSession() {
+    // Method to finalize the session
+  }
+
+  List<TeamPerformance> getTeamPerformances() {
+    List<TeamPerformance> performances = [];
+    for (Team team in teams) {
+      int correctAnswers = 0;
+      int incorrectAnswers = 0;
+      int totalTimeSeconds = 0;
+      int score = 0;
+
+      // Calculate team performance based on results
+      if (teamResults.containsKey(team.name)) {
+        List<QuestionResult> results = teamResults[team.name]!;
+        for (QuestionResult result in results) {
+          if (result.isCorrect) {
+            correctAnswers++;
+          } else {
+            incorrectAnswers++;
+          }
+          totalTimeSeconds += result.timeTakenSeconds;
+          score += result.pointsAwarded;
+        }
+      }
+
+      performances.add(TeamPerformance(
+        teamName: team.name,
+        score: score,
+        correctAnswers: correctAnswers,
+        incorrectAnswers: incorrectAnswers,
+        totalTimeSeconds: totalTimeSeconds,
+      ));
+    }
+    return performances;
+  }
+
+  Duration get duration {
+    return DateTime.now().difference(startTime);
+  }
+}
+
+class QuestionResult {
+  final Question question;
+  final int? selectedAnswerIndex;
+  final bool isCorrect;
+  final int pointsAwarded;
+  final int timeTakenSeconds;
+  final DateTime answeredAt;
+
+  QuestionResult({
+    required this.question,
+    this.selectedAnswerIndex,
+    required this.isCorrect,
+    required this.pointsAwarded,
+    required this.timeTakenSeconds,
+    required this.answeredAt,
+  });
 }
 
 class QuizData {
@@ -299,6 +288,7 @@ class QuizData {
         explanation: "2+2=4",
         timeLimitSeconds: 30,
         difficulty: QuestionDifficulty.easy,
+        category: 'General',
       ),
       Question(
         id: 2,
@@ -308,6 +298,7 @@ class QuizData {
         explanation: "الرياض هي العاصمة الرسمية للمملكة العربية السعودية",
         timeLimitSeconds: 45,
         difficulty: QuestionDifficulty.medium,
+        category: 'General',
       ),
       Question(
         id: 3,
@@ -317,6 +308,7 @@ class QuizData {
         explanation: "يحتوي القرآن الكريم على 114 سورة",
         timeLimitSeconds: 60,
         difficulty: QuestionDifficulty.hard,
+        category: 'General',
       ),
       Question(
         id: 4,
@@ -326,6 +318,7 @@ class QuizData {
         explanation: "المحيط الهادئ هو أكبر المحيطات في العالم",
         timeLimitSeconds: 40,
         difficulty: QuestionDifficulty.medium,
+        category: 'General',
       ),
       Question(
         id: 5,
@@ -335,6 +328,7 @@ class QuizData {
         explanation: "15 ÷ 3 = 5",
         timeLimitSeconds: 25,
         difficulty: QuestionDifficulty.easy,
+        category: 'General',
       ),
     ];
   }
@@ -350,6 +344,7 @@ class QuizData {
         explanation: "7 × 8 = 56",
         timeLimitSeconds: 30,
         difficulty: QuestionDifficulty.easy,
+        category: 'Mathematics',
       ),
       Question(
         id: 2,
@@ -359,6 +354,7 @@ class QuizData {
         explanation: "المساحة = π × نق² = 3.14 × 25 = 78.5 سم²",
         timeLimitSeconds: 60,
         difficulty: QuestionDifficulty.medium,
+        category: 'Mathematics',
       ),
       Question(
         id: 3,
@@ -368,6 +364,7 @@ class QuizData {
         explanation: "الجذر التربيعي لـ 144 هو 12",
         timeLimitSeconds: 25,
         difficulty: QuestionDifficulty.easy,
+        category: 'Mathematics',
       ),
       Question(
         id: 4,
@@ -377,6 +374,7 @@ class QuizData {
         explanation: "2(5) + 3 = 10 + 3 = 13",
         timeLimitSeconds: 35,
         difficulty: QuestionDifficulty.medium,
+        category: 'Mathematics',
       ),
       Question(
         id: 5,
@@ -386,6 +384,7 @@ class QuizData {
         explanation: "المضلع الخماسي له 5 أضلاع",
         timeLimitSeconds: 20,
         difficulty: QuestionDifficulty.easy,
+        category: 'Mathematics',
       ),
     ];
   }
@@ -401,6 +400,7 @@ class QuizData {
         explanation: "آسيا هي أكبر قارة في العالم من حيث المساحة",
         timeLimitSeconds: 40,
         difficulty: QuestionDifficulty.medium,
+        category: 'General Knowledge',
       ),
       Question(
         id: 2,
@@ -410,33 +410,17 @@ class QuizData {
         explanation: "ستيف جوبز هو المؤسس المشارك لشركة آبل",
         timeLimitSeconds: 35,
         difficulty: QuestionDifficulty.medium,
+        category: 'General Knowledge',
       ),
       Question(
         id: 3,
-        question: "ما هي العملة الرسمية للسعودية؟",
-        options: ["درهم", "ريال", "دينار", "جنيه"],
-        correctAnswerIndex: 1,
-        explanation: "الريال السعودي هو العملة الرسمية للمملكة العربية السعودية",
-        timeLimitSeconds: 25,
-        difficulty: QuestionDifficulty.easy,
-      ),
-      Question(
-        id: 4,
-        question: "كم عدد الكواكب في النظام الشمسي؟",
-        options: ["7", "8", "9", "10"],
-        correctAnswerIndex: 1,
-        explanation: "هناك 8 كواكب في النظام الشمسي",
-        timeLimitSeconds: 30,
-        difficulty: QuestionDifficulty.easy,
-      ),
-      Question(
-        id: 5,
-        question: "ما هي أعلى جبل في العالم؟",
-        options: ["كليمنجارو", "إيفرست", "ك2", "ماتر هورن"],
-        correctAnswerIndex: 1,
-        explanation: "جبل إيفرست هو أعلى جبل في العالم بارتفاع 8848 متر",
+        question: "ما هو أعلى جبل في العالم؟",
+        options: ["كليمنجارو", "الهيمالايا", "ايفست", "دنالي"],
+        correctAnswerIndex: 2,
+        explanation: "جبل ايفست هو أعلى جبل في العالم",
         timeLimitSeconds: 45,
-        difficulty: QuestionDifficulty.hard,
+        difficulty: QuestionDifficulty.medium,
+        category: 'General Knowledge',
       ),
     ];
   }
@@ -446,21 +430,23 @@ class QuizData {
     return [
       Question(
         id: 1,
-        question: "كم عدد الآيات في سورة الفاتحة؟",
-        options: ["5", "6", "7", "8"],
-        correctAnswerIndex: 2,
-        explanation: "سورة الفاتحة تحتوي على 7 آيات",
-        timeLimitSeconds: 30,
-        difficulty: QuestionDifficulty.easy,
+        question: "ما هي أول فريضة فرضها الله على المسلمين؟",
+        options: ["الصلاة", "الزكاة", "الصيام", "الحج"],
+        correctAnswerIndex: 0,
+        explanation: "الصلاة كانت أول فريضة فرضها الله على المسلمين",
+        timeLimitSeconds: 50,
+        difficulty: QuestionDifficulty.hard,
+        category: 'Religion',
       ),
       Question(
         id: 2,
-        question: "ما هي أول obligation واجب في الإسلام؟",
-        options: ["الشهادة", "الصلاة", "الزكاة", "الحج"],
-        correctAnswerIndex: 0,
-        explanation: "الشهادة أن لا إله إلا الله وأن محمداً رسول الله هي أول أركان الإسلام",
+        question: "من هو أول رسول بعثه الله تعالى؟",
+        options: ["نوح", "إبراهيم", "موسى", "آدم"],
+        correctAnswerIndex: 3,
+        explanation: "النبي آدم عليه السلام هو أول رسول بعثه الله تعالى",
         timeLimitSeconds: 45,
         difficulty: QuestionDifficulty.medium,
+        category: 'Religion',
       ),
       Question(
         id: 3,
@@ -470,6 +456,7 @@ class QuizData {
         explanation: "أركان الإسلام الخمسة هي: الشهادة، الصلاة، الزكاة، الصيام، الحج",
         timeLimitSeconds: 25,
         difficulty: QuestionDifficulty.easy,
+        category: 'Religion',
       ),
       Question(
         id: 4,
@@ -479,6 +466,7 @@ class QuizData {
         explanation: "النبي آدم عليه السلام هو أول الأنبياء المرسلين",
         timeLimitSeconds: 35,
         difficulty: QuestionDifficulty.medium,
+        category: 'Religion',
       ),
       Question(
         id: 5,
@@ -488,6 +476,7 @@ class QuizData {
         explanation: "سورة البقرة هي أطول سور القرآن الكريم",
         timeLimitSeconds: 50,
         difficulty: QuestionDifficulty.hard,
+        category: 'Religion',
       ),
     ];
   }
@@ -503,6 +492,7 @@ class QuizData {
         explanation: "الصدى يشير إليك ولا تراه، وترى الصدى عندما تسمعه",
         timeLimitSeconds: 60,
         difficulty: QuestionDifficulty.hard,
+        category: 'Riddles',
       ),
       Question(
         id: 2,
@@ -512,6 +502,7 @@ class QuizData {
         explanation: "المنشار له أسنان حادة ولا يعض، وله رأس ولا يعقل",
         timeLimitSeconds: 50,
         difficulty: QuestionDifficulty.medium,
+        category: 'Riddles',
       ),
       Question(
         id: 3,
@@ -521,6 +512,7 @@ class QuizData {
         explanation: "الكتاب يمشي بالأفكار بلا قدمين ويتكلم بالمعرفة بلا لسان",
         timeLimitSeconds: 45,
         difficulty: QuestionDifficulty.medium,
+        category: 'Riddles',
       ),
       Question(
         id: 4,
@@ -530,15 +522,17 @@ class QuizData {
         explanation: "كلما حفرت في الأرض زاد الحفر أكثر فأكثر",
         timeLimitSeconds: 40,
         difficulty: QuestionDifficulty.medium,
+        category: 'Riddles',
       ),
       Question(
         id: 5,
-        question: "له أوراق وليس شجرة، ولحم وليس حيوان، ومن هو؟",
+        question: "له أوراق وليس شجرة، ولحم وليس حيوان، فمن هو؟",
         options: ["الكتاب", "الورق", "الحقيبة", "الصندوق"],
         correctAnswerIndex: 0,
         explanation: "الكتاب له أوراق (صفحات) وليس شجرة، وله لحم (محتوى) وليس حيواناً",
         timeLimitSeconds: 55,
         difficulty: QuestionDifficulty.hard,
+        category: 'Riddles',
       ),
     ];
   }
@@ -551,12 +545,12 @@ class QuizData {
     allQuestions.addAll(getGeneralKnowledgeQuestions());
     allQuestions.addAll(getReligiousQuestions());
     allQuestions.addAll(getRiddlesQuestions());
-    
+
     // Shuffle and return requested count
     allQuestions.shuffle();
     return allQuestions.take(count).toList();
   }
-  
+
   // Get questions by category name
   static List<Question> getQuestionsByCategory(String categoryName) {
     switch (categoryName) {

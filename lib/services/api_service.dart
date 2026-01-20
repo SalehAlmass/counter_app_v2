@@ -3,9 +3,11 @@ import 'package:http/http.dart' as http;
 import 'package:counter_app/models/question_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost/counter_app_v2/api'; // Change to your server URL
-  // static const String baseUrl = 'http://10.0.2.2/counter_app_v2/api'; 
+  static const String baseUrl = 'http://localhost/counter_app_v2/api'; // ضع هنا رابط السيرفر الصحيح
+
+  // ===========================
   // Categories API
+  // ===========================
   static Future<List<Map<String, dynamic>>> getAllCategories() async {
     try {
       final response = await http.get(
@@ -31,12 +33,8 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'name': name}),
       );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to create category: ${response.statusCode}');
-      }
+      if (response.statusCode == 200) return json.decode(response.body);
+      throw Exception('Failed to create category: ${response.statusCode}');
     } catch (e) {
       throw Exception('Error creating category: $e');
     }
@@ -49,12 +47,8 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'id': id, 'name': name}),
       );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to update category: ${response.statusCode}');
-      }
+      if (response.statusCode == 200) return json.decode(response.body);
+      throw Exception('Failed to update category: ${response.statusCode}');
     } catch (e) {
       throw Exception('Error updating category: $e');
     }
@@ -67,64 +61,56 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'id': id}),
       );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to delete category: ${response.statusCode}');
-      }
+      if (response.statusCode == 200) return json.decode(response.body);
+      throw Exception('Failed to delete category: ${response.statusCode}');
     } catch (e) {
       throw Exception('Error deleting category: $e');
     }
   }
 
+  // ===========================
   // Questions API
-static Future<List<Map<String, dynamic>>> getAllQuestions({int? categoryId}) async {
-  try {
-    String url = '$baseUrl/questions/get_questions.php';
-    if (categoryId != null) {
-      url += '?category_id=$categoryId';
-    }
+  // ===========================
+  static Future<List<Map<String, dynamic>>> getAllQuestions({int? categoryId}) async {
+    try {
+      String url = '$baseUrl/questions/get_questions.php';
+      if (categoryId != null) url += '?category_id=$categoryId';
 
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-    );
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
 
-    if (response.statusCode == 200) {
-      final decoded = json.decode(response.body);
-
-      if (decoded is! List) {
-        throw Exception('Invalid questions response');
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded is! List) throw Exception('Invalid questions response');
+        return List<Map<String, dynamic>>.from(decoded);
+      } else {
+        throw Exception('Failed to load questions: ${response.statusCode}');
       }
-
-      return List<Map<String, dynamic>>.from(decoded);
-    } else {
-      throw Exception('Failed to load questions: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error loading questions: $e');
     }
-  } catch (e) {
-    throw Exception('Error loading questions: $e');
   }
-}
 
   static Future<List<Question>> getQuestionsForCategory(String categoryName) async {
     try {
-      // Get all categories first to find the ID
+      // جلب جميع الأقسام أولًا
       final categories = await getAllCategories();
       final category = categories.firstWhere(
         (cat) => cat['name'] == categoryName,
-        orElse: () => {'id': null},
+        orElse: () => {'id': null, 'name': 'General'},
       );
 
       if (category['id'] == null) {
-        return QuizData.getQuestionsByCategory(categoryName); // fallback to local data
+        // fallback للأسئلة المحلية
+        return QuizData.getQuestionsByCategory(categoryName);
       }
 
       final questionsData = await getAllQuestions(categoryId: category['id']);
-
       return questionsData.map((q) => _mapToQuestion(q)).toList();
     } catch (e) {
-      // Fallback to local data if API fails
+      // fallback للأسئلة المحلية إذا API فشل
       return QuizData.getQuestionsByCategory(categoryName);
     }
   }
@@ -132,58 +118,57 @@ static Future<List<Map<String, dynamic>>> getAllQuestions({int? categoryId}) asy
   static Future<List<Question>> getAllQuestionsList() async {
     try {
       final questionsData = await getAllQuestions();
-
       return questionsData.map((q) => _mapToQuestion(q)).toList();
     } catch (e) {
-      // Fallback to local data if API fails
       return QuizData.getQuestions();
     }
   }
 
-  // static Question _mapToQuestion(Map<String, dynamic> map) {
-  //   return Question(
-  //     id: map['id'],
-  //     question: map['question'],
-  //     options: [map['option1'], map['option2'], map['option3'], map['option4']],
-  //     correctAnswerIndex: map['correct_answer_index'],
-  //     explanation: map['explanation'] ?? '',
-  //     difficulty: _intToDifficulty(map['difficulty'] ?? 1),
-  //     timeLimitSeconds: map['time_limit_seconds'] ?? 30,
-  //   );
-  // }
+  // ===========================
+  // Map API Response to Question
+  // ===========================
   static Question _mapToQuestion(Map<String, dynamic> map) {
-  return Question(
-    id: int.parse(map['id'].toString()),
-    question: map['question'],
-    options: [
-      map['option1'],
-      map['option2'],
-      map['option3'],
-      map['option4'],
-    ],
-    correctAnswerIndex: int.parse(map['correct_answer_index'].toString()),
-    explanation: map['explanation'] ?? '',
-    difficulty: _intToDifficulty(
-      int.parse(map['difficulty'].toString()),
-    ),
-    timeLimitSeconds: int.parse(map['time_limit_seconds'].toString()),
-    categoryId: int.parse(map['category_id'].toString()),
-  );
-}
+    return Question(
+      id: int.parse(map['id'].toString()),
+      question: map['question'],
+      options: [
+        map['option1'],
+        map['option2'],
+        map['option3'],
+        map['option4'],
+      ],
+      correctAnswerIndex: int.parse(map['correct_answer_index'].toString()),
+      explanation: map['explanation'] ?? '',
+      difficulty: _intToDifficulty(int.parse(map['difficulty'].toString())),
+      timeLimitSeconds: int.parse(map['time_limit_seconds'].toString()),
+      categoryId: map.containsKey('category_id') ? int.parse(map['category_id'].toString()) : null,
+      category: map['category'] ?? 'General',
+      type: QuestionType.multipleChoice,
+      answeredAt: null,
+      isCorrect: null,
+    );
+  }
 
   static QuestionDifficulty _intToDifficulty(int value) {
     switch (value) {
-      case 0:
-        return QuestionDifficulty.easy;
-      case 1:
-        return QuestionDifficulty.medium;
-      case 2:
-        return QuestionDifficulty.hard;
-      default:
-        return QuestionDifficulty.medium;
+      case 0: return QuestionDifficulty.easy;
+      case 1: return QuestionDifficulty.medium;
+      case 2: return QuestionDifficulty.hard;
+      default: return QuestionDifficulty.medium;
     }
   }
 
+  static int _difficultyToInt(QuestionDifficulty difficulty) {
+    switch (difficulty) {
+      case QuestionDifficulty.easy: return 0;
+      case QuestionDifficulty.medium: return 1;
+      case QuestionDifficulty.hard: return 2;
+    }
+  }
+
+  // ===========================
+  // CRUD Operations for Questions
+  // ===========================
   static Future<Map<String, dynamic>> createQuestion(Question question, int categoryId) async {
     try {
       final response = await http.post(
@@ -202,12 +187,8 @@ static Future<List<Map<String, dynamic>>> getAllQuestions({int? categoryId}) asy
           'category_id': categoryId,
         }),
       );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to create question: ${response.statusCode}');
-      }
+      if (response.statusCode == 200) return json.decode(response.body);
+      throw Exception('Failed to create question: ${response.statusCode}');
     } catch (e) {
       throw Exception('Error creating question: $e');
     }
@@ -232,12 +213,8 @@ static Future<List<Map<String, dynamic>>> getAllQuestions({int? categoryId}) asy
           'category_id': categoryId,
         }),
       );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to update question: ${response.statusCode}');
-      }
+      if (response.statusCode == 200) return json.decode(response.body);
+      throw Exception('Failed to update question: ${response.statusCode}');
     } catch (e) {
       throw Exception('Error updating question: $e');
     }
@@ -250,25 +227,10 @@ static Future<List<Map<String, dynamic>>> getAllQuestions({int? categoryId}) asy
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'id': id}),
       );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to delete question: ${response.statusCode}');
-      }
+      if (response.statusCode == 200) return json.decode(response.body);
+      throw Exception('Failed to delete question: ${response.statusCode}');
     } catch (e) {
       throw Exception('Error deleting question: $e');
-    }
-  }
-
-  static int _difficultyToInt(QuestionDifficulty difficulty) {
-    switch (difficulty) {
-      case QuestionDifficulty.easy:
-        return 0;
-      case QuestionDifficulty.medium:
-        return 1;
-      case QuestionDifficulty.hard:
-        return 2;
     }
   }
 }

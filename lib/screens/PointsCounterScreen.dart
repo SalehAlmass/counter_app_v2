@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:counter_app/cubit/counter_cubit.dart';
 import 'package:counter_app/cubit/counter_state.dart';
+import 'package:counter_app/database/database_helper.dart';
 import 'package:counter_app/models/question_model.dart';
 import 'package:counter_app/screens/QuizScreen.dart';
 import 'package:counter_app/utils/app_constants.dart';
@@ -32,32 +33,67 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
     Team(name: "الفريق الأول", members: [TeamMember(name: "عضو 1")]),
     Team(name: "الفريق الثاني", members: [TeamMember(name: "عضو 2")]),
   ];
-  
-  // Timer related variables
+
+  // Timer variables
   late List<Question> questions;
-  late Timer _questionTimer;
+  Timer? _questionTimer;
   int timeRemaining = 30;
   bool isTimeExpired = false;
   bool showCorrectAnswerOnly = false;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   @override
   void initState() {
     super.initState();
-    // Use provided questions or default to general questions
-    questions = widget.initialQuestions ?? QuizData.getQuestions();
-    _startQuestionTimer();
+    if (widget.initialQuestions != null) {
+      questions = widget.initialQuestions!;
+      _startQuestionTimer();
+    } else {
+      _loadQuestionsFromDatabase();
+    }
+  }
+
+  Future<void> _loadQuestionsFromDatabase() async {
+    try {
+      if (widget.categoryName != null) {
+        questions = await _dbHelper.getQuestionsForCategory(widget.categoryName!);
+      } else {
+        questions = await _dbHelper.getAllQuestionsList();
+      }
+
+      if (questions.isEmpty) {
+        questions = widget.categoryName != null
+            ? QuizData.getQuestionsByCategory(widget.categoryName!)
+            : QuizData.getQuestions();
+      }
+
+      if (mounted) setState(() {});
+      _startQuestionTimer();
+    } catch (e) {
+      print('Error loading questions: $e');
+      questions = widget.categoryName != null
+          ? QuizData.getQuestionsByCategory(widget.categoryName!)
+          : QuizData.getQuestions();
+      _startQuestionTimer();
+    }
   }
 
   void _startQuestionTimer() {
+    _questionTimer?.cancel(); // إلغاء أي مؤقت سابق
     timeRemaining = questions[currentQuestionIndex].timeLimitSeconds;
     isTimeExpired = false;
     showCorrectAnswerOnly = false;
-    
+
     _questionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
       setState(() {
         timeRemaining--;
       });
-      
+
       if (timeRemaining <= 0) {
         _handleTimeExpiration();
         timer.cancel();
@@ -74,7 +110,7 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
 
   @override
   void dispose() {
-    _questionTimer.cancel();
+    _questionTimer?.cancel();
     super.dispose();
   }
 
@@ -86,20 +122,49 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
         String winner = counterCubit.getWinner();
         int winnerScore = counterCubit.getWinnerScore();
         List<String> teamNames = counterCubit.getTeamNames();
+
         return Scaffold(
           appBar: CustomAppbar(initialDuration: const Duration(minutes: 2)),
-          body: Stack(
+          body: Row(
             children: [
-              _buildMainContent(counterCubit, teamNames),
-              if (showWinner) _buildWinnerOverlay(winner, winnerScore),
+              Expanded(
+                flex: 3,
+                child: ResultsTableWidget(
+                  counterCubit: counterCubit,
+                  teamNames: teamNames,
+                  onResetTable: () => counterCubit.resetTable(),
+                  getTotalScore: _getTeamTotalScore,
+                  onShowWinner: () => setState(() => showWinner = true),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                  child: QuestionSection(
+                    onOptionSelected: (option) => setState(() => selectedOption = option),
+                    onNextQuestion: _handleNextQuestion,
+                    onPreviousQuestion: _handlePreviousQuestion,
+                    currentQuestionIndex: currentQuestionIndex,
+                    totalQuestions: questions.length,
+                    currentQuestion: questions[currentQuestionIndex],
+                    timeRemaining: timeRemaining,
+                    showCorrectAnswerOnly: showCorrectAnswerOnly,
+                    isTimeExpired: isTimeExpired,
+                    onTimerTap: _restartTimer,
+                  ),
+                ),
+              ),
+              if (showWinner)
+                _buildWinnerOverlay(winner, winnerScore),
             ],
           ),
           floatingActionButton: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               FloatingActionButton.extended(
-                heroTag: 'team_competition_fab', // Add unique hero tag
-                onPressed: () => _showTeamSetupDialog(),
+                heroTag: 'team_competition_fab',
+                onPressed: _showTeamSetupDialog,
                 backgroundColor: Colors.purple,
                 foregroundColor: Colors.white,
                 icon: const Icon(Icons.group),
@@ -107,7 +172,7 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
               ),
               const SizedBox(height: 12),
               FloatingActionButton.extended(
-                heroTag: 'individual_quiz_fab', // Add unique hero tag
+                heroTag: 'individual_quiz_fab',
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const QuizScreen()),
@@ -125,58 +190,118 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
     );
   }
 
-  Widget _buildMainContent(CounterCubit counterCubit, List<String> teamNames) {
-    return Row(
-      children: [   
-        _buildResultsSection(counterCubit, teamNames),
-        _buildQuestionSection(),
-      ],
-    );
+  // ========== Question Navigation ==========
+  void _handleNextQuestion() {
+    if (currentQuestionIndex < questions.length - 1) {
+      setState(() {
+        currentQuestionIndex++;
+        selectedOption = null;
+        showCorrectAnswerOnly = false;
+        isTimeExpired = false;
+      });
+      _startQuestionTimer();
+    }
   }
 
-  Widget _buildQuestionSection() {
-    Question currentQuestion = questions[currentQuestionIndex];
-    
-    return Expanded(
-      flex: 2,
-      child: Container(
-        padding: const EdgeInsets.all(AppConstants.defaultPadding),
-        child: QuestionSection(
-          onOptionSelected: (option) => setState(() => selectedOption = option),
-          onNextQuestion: _handleNextQuestion,
-          onPreviousQuestion: _handlePreviousQuestion,
-          currentQuestionIndex: currentQuestionIndex,
-          totalQuestions: questions.length,
-          currentQuestion: currentQuestion,
-          timeRemaining: timeRemaining,
-          showCorrectAnswerOnly: showCorrectAnswerOnly,
-          isTimeExpired: isTimeExpired,
-          onTimerTap: _restartTimer, // Add timer tap callback
+  void _handlePreviousQuestion() {
+    if (currentQuestionIndex > 0) {
+      setState(() {
+        currentQuestionIndex--;
+        selectedOption = null;
+        showCorrectAnswerOnly = false;
+        isTimeExpired = false;
+      });
+      _startQuestionTimer();
+    }
+  }
+
+  void _restartTimer() {
+    setState(() {
+      showCorrectAnswerOnly = false;
+      isTimeExpired = false;
+    });
+    _startQuestionTimer();
+  }
+
+  // ========== Winner Overlay ==========
+  Widget _buildWinnerOverlay(String winner, int winnerScore) {
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: () => setState(() => showWinner = false),
+        child: Container(
+          color: Colors.black54,
+          alignment: Alignment.center,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 500),
+            padding: const EdgeInsets.all(AppConstants.largePadding),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Colors.orange, Colors.deepOrangeAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black45,
+                  blurRadius: 15,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  winner.isEmpty ? "لا توجد فرق" : "الفائز: $winner",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black38,
+                        offset: Offset(2, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$winnerScore نقطة',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => setState(() => showWinner = false),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.deepOrange,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text("إغلاق"),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildResultsSection(CounterCubit counterCubit, List<String> teamNames) {
-    return Expanded(
-      flex: 3,
-      child: Container(
-        padding: const EdgeInsets.all(AppConstants.defaultPadding),
-        child: ResultsTableWidget(
-          counterCubit: counterCubit,
-          teamNames: teamNames,
-          onResetTable: () => counterCubit.resetTable(),
-          getTotalScore: _getTeamTotalScore,
-          onShowWinner: () => setState(() => showWinner = true),
-        ),
-      ),
-    );
-  }
-
+  // ========== Team Setup ==========
   void _showTeamSetupDialog() {
     TextEditingController teamNameController = TextEditingController();
     List<Team> tempTeams = List.from(teams);
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -273,115 +398,7 @@ class _PointsCounterScreenState extends State<PointsCounterScreen> {
     );
   }
 
-  Widget _buildWinnerOverlay(String winner, int winnerScore) {
-    return Positioned.fill(
-      child: GestureDetector(
-        onTap: () => setState(() => showWinner = false),
-        child: Container(
-          color: Colors.black54,
-          alignment: Alignment.center,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 500),
-            padding: const EdgeInsets.all(AppConstants.largePadding),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Colors.orange, Colors.deepOrangeAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black45,
-                  blurRadius: 15,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  winner.isEmpty ? "لا توجد فرق" : "الفائز: $winner",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black38,
-                        offset: Offset(2, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$winnerScore نقطة',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () => setState(() => showWinner = false),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.deepOrange,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text("إغلاق"),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // MARK: - Event Handlers
-
-  void _handleNextQuestion() {
-    if (currentQuestionIndex < questions.length - 1) {
-      setState(() {
-        currentQuestionIndex++;
-        selectedOption = null;
-        showCorrectAnswerOnly = false;
-        isTimeExpired = false;
-      });
-      _startQuestionTimer();
-    }
-  }
-
-  void _handlePreviousQuestion() {
-    if (currentQuestionIndex > 0) {
-      setState(() {
-        currentQuestionIndex--;
-        selectedOption = null;
-        showCorrectAnswerOnly = false;
-        isTimeExpired = false;
-      });
-      _startQuestionTimer();
-    }
-  }
-
-  void _restartTimer() {
-    setState(() {
-      showCorrectAnswerOnly = false;
-      isTimeExpired = false;
-    });
-    _startQuestionTimer();
-  }
-
-  // MARK: - Helper Methods
-
+  // ========== Score Helper ==========
   int _getTeamTotalScore(int teamIndex) {
     final counterCubit = context.read<CounterCubit>();
     int totalScore = 0;

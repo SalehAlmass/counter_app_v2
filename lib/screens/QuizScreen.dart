@@ -471,11 +471,11 @@ class _EnhancedQuizScreenState extends State<EnhancedQuizScreen>
         
         QuestionResult result = QuestionResult(
           question: currentQuestion,
-          selectedOptionIndex: selectedOption,
+          selectedAnswerIndex: selectedOption,
           answeredAt: answeredTime,
           timeTakenSeconds: timeTaken,
           isCorrect: isCorrect,
-          pointsEarned: points,
+          pointsAwarded: points,
         );
         
         session.teamResults[teamName]?.add(result);
