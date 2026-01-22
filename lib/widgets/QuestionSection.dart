@@ -4,17 +4,23 @@ import 'package:flutter/material.dart';
 
 class QuestionSection extends StatefulWidget {
   final Function(String selectedOption) onOptionSelected;
-  final Function() onNextQuestion;
-  final Function() onPreviousQuestion;
+  final VoidCallback onNextQuestion;
+  final VoidCallback onPreviousQuestion;
   final int currentQuestionIndex;
   final int totalQuestions;
   final Question? currentQuestion;
+
   final int timeRemaining;
   final bool showCorrectAnswerOnly;
   final bool isTimeExpired;
-  final Function()? onTimerTap;
-  final String? categoryName;
+  final VoidCallback? onTimerTap;
 
+  final bool isTimerRunning;
+  final VoidCallback? onStartPause;
+  final VoidCallback? onResetTimer;
+
+  final int? totalTimeTotalSeconds;
+  final int? totalTimeRemainingSeconds;
 
   const QuestionSection({
     super.key,
@@ -28,7 +34,11 @@ class QuestionSection extends StatefulWidget {
     this.showCorrectAnswerOnly = false,
     this.isTimeExpired = false,
     this.onTimerTap,
-    this.categoryName
+    this.isTimerRunning = false,
+    this.onStartPause,
+    this.onResetTimer,
+    this.totalTimeTotalSeconds,
+    this.totalTimeRemainingSeconds,
   });
 
   @override
@@ -38,17 +48,22 @@ class QuestionSection extends StatefulWidget {
 class _QuestionSectionState extends State<QuestionSection> {
   String? selectedOption;
 
+  String _formatSeconds(int totalSeconds) {
+    if (totalSeconds < 0) totalSeconds = 0;
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    String two(int n) => n.toString().padLeft(2, '0');
+    if (hours > 0) return '${two(hours)}:${two(minutes)}:${two(seconds)}';
+    return '${two(minutes)}:${two(seconds)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final question = widget.currentQuestion;
-
     if (question == null) {
-      return const Center(
-        child: Text(
-          'لا يوجد سؤال لعرضه',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
+      return const Center(child: Text('لا يوجد سؤال لعرضه', style: TextStyle(fontSize: 18)));
     }
 
     return Container(
@@ -65,72 +80,111 @@ class _QuestionSectionState extends State<QuestionSection> {
       ),
       child: Column(
         children: [
-          /// ===== Header =====
+          // ===== Header =====
           Container(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF2196F3),
-                  Color(0xFF1565C0),
-                ],
-              ),
+              gradient: LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF1565C0)]),
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  '${widget.currentQuestionIndex + 1}/${widget.totalQuestions}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-
-                /// اسم القسم
-                Text(
-                  question.category,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-
-                /// Timer
-                InkWell(
-                  onTap: widget.onTimerTap,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: widget.isTimeExpired
-                          ? Colors.red
-                          : widget.timeRemaining < 10
-                              ? Colors.red.withValues(alpha: 0.7)
-                              : Colors.white.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12),
+                // سطر علوي مرن بدون overflow
+                Row(
+                  children: [
+                    Text(
+                      '${widget.currentQuestionIndex + 1}/${widget.totalQuestions}',
+                      style: const TextStyle(color: Colors.white70),
                     ),
-                    child: Text(
-                      widget.isTimeExpired
-                          ? 'انتهى الوقت'
-                          : '${widget.timeRemaining} ث',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        question.category,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
+
+                const SizedBox(height: 8),
+
+                // ✅ Wrap بدل Row: يمنع overflow
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.end,
+                  children: [
+                    IconButton(
+                      tooltip: widget.isTimerRunning ? 'إيقاف مؤقت' : 'ابدأ',
+                      onPressed: widget.onStartPause,
+                      icon: Icon(
+                        widget.isTimerRunning ? Icons.pause_circle : Icons.play_circle,
+                        color: Colors.white,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'إعادة التوقيت',
+                      onPressed: widget.onResetTimer,
+                      icon: const Icon(Icons.replay_circle_filled, color: Colors.white),
+                    ),
+                    InkWell(
+                      onTap: widget.onTimerTap,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: widget.isTimeExpired
+                              ? Colors.red
+                              : widget.timeRemaining < 10
+                                  ? Colors.red.withValues(alpha: 0.7)
+                                  : Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          widget.isTimeExpired ? 'انتهى الوقت' : '${widget.timeRemaining} ث',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                if (widget.totalTimeTotalSeconds != null) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'الوقت الكلي: ${_formatSeconds(widget.totalTimeTotalSeconds!)}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      if (widget.totalTimeRemainingSeconds != null)
+                        Text(
+                          'المتبقي تقريبًا: ${_formatSeconds(widget.totalTimeRemainingSeconds!)}',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
 
-          /// ===== Content (Scrollable) =====
+          // ===== Content =====
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppConstants.defaultPadding),
               child: Column(
                 children: [
-                  /// السؤال
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -141,29 +195,20 @@ class _QuestionSectionState extends State<QuestionSection> {
                     child: Text(
                       question.question,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        height: 1.5,
-                      ),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, height: 1.5),
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  /// الخيارات
                   Column(
                     children: question.options.asMap().entries.map((entry) {
                       final index = entry.key;
                       final option = entry.value;
-
                       return _buildOption(
                         option: option,
                         isCorrect: index == question.correctAnswerIndex,
                         isSelected: selectedOption == option,
                         showCorrectOnly: widget.showCorrectAnswerOnly,
-                        isDisabled: widget.isTimeExpired ||
-                            widget.showCorrectAnswerOnly,
+                        isDisabled: widget.isTimeExpired || widget.showCorrectAnswerOnly,
                       );
                     }).toList(),
                   ),
@@ -172,24 +217,19 @@ class _QuestionSectionState extends State<QuestionSection> {
             ),
           ),
 
-          /// ===== Navigation =====
+          // ===== Navigation =====
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: widget.currentQuestionIndex > 0
-                      ? widget.onPreviousQuestion
-                      : null,
+                  onPressed: widget.currentQuestionIndex > 0 ? widget.onPreviousQuestion : null,
                   child: const Text('السابق'),
                 ),
                 ElevatedButton(
-                  onPressed: widget.isTimeExpired || selectedOption != null
-                      ? widget.onNextQuestion
-                      : null,
-                  child:
-                      Text(widget.isTimeExpired ? 'متابعة' : 'التالي'),
+                  onPressed: widget.isTimeExpired || selectedOption != null ? widget.onNextQuestion : null,
+                  child: Text(widget.isTimeExpired ? 'متابعة' : 'التالي'),
                 ),
               ],
             ),

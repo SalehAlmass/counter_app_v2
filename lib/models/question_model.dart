@@ -276,7 +276,7 @@ class QuestionResult {
     required this.answeredAt,
   });
 }
-
+/*
 class QuizData {
   static List<Question> getQuestions() {
     return [
@@ -566,4 +566,4 @@ class QuizData {
         return getQuestions();
     }
   }
-}
+}*/

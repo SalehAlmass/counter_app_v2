@@ -40,25 +40,36 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
           children: [
             _buildHeader(),
             _buildControls(context),
+
+            // ✅ تمرير أفقي يمنع overflow مع كثرة الأعمدة
             Expanded(
-              child: Column(
-                children: [
-                  _tableHeader(teams),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: rowCount,
-                      itemBuilder: (context, index) {
-                        return _row(
-                          cubit: cubit,
-                          teams: teams,
-                          index: index,
-                          isPreview: isEmpty,
-                        );
-                      },
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 650),
+                  child: SizedBox(
+                    width: 650 + (teams.length * 140),
+                    child: Column(
+                      children: [
+                        _tableHeader(teams),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: rowCount,
+                            itemBuilder: (context, index) {
+                              return _row(
+                                cubit: cubit,
+                                teams: teams,
+                                index: index,
+                                isPreview: isEmpty,
+                              );
+                            },
+                          ),
+                        ),
+                        if (showTotal) _totalRow(cubit, teams, isEmpty),
+                      ],
                     ),
                   ),
-                  if (showTotal) _totalRow(cubit, teams, isEmpty),
-                ],
+                ),
               ),
             ),
           ],
@@ -66,8 +77,6 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
       ),
     );
   }
-
-  // ================= UI PARTS =================
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
@@ -87,12 +96,7 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-              Color(0xFF2196F3), // أزرق متوسط
-              Color(0xFF1565C0), // أزرق غامق
-            ],
-        ),
+        gradient: LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF1565C0)]),
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Row(
@@ -113,7 +117,6 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
     );
   }
 
-  /// ================= CONTROLS =================
   Widget _buildControls(BuildContext context) {
     final cubit = widget.counterCubit;
     final teams = widget.teamNames;
@@ -125,20 +128,16 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
         runSpacing: 12,
         alignment: WrapAlignment.center,
         children: [
-          _btn(
-            showTotal ? "إخفاء المجموع" : "إظهار المجموع",
-            Colors.grey,
-            () => setState(() => showTotal = !showTotal),
-          ),
+          _btn(showTotal ? "إخفاء المجموع" : "إظهار المجموع", Colors.grey, () {
+            setState(() => showTotal = !showTotal);
+          }),
           _btn("حذف عمود", Colors.orange, () {
             if (teams.length <= 2) {
               _showAlert(context, "لا يمكن أن يقل عدد الأعمدة عن 2");
               return;
             }
-            // حذف آخر عمود
             cubit.removeColumn(teams.length - 1);
           }),
-
           _btn("إضافة عمود", Colors.blue, () {
             if (teams.length >= 8) {
               _showAlert(context, "لا يمكن إضافة أكثر من 8 أعمدة");
@@ -160,35 +159,12 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
   }
 
   Widget _btn(String text, Color color, VoidCallback onTap) {
-  return StatefulBuilder(
-    builder: (context, setState) {
-      bool _isPressed = false;
-      return GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) {
-          setState(() => _isPressed = false);
-          onTap();
-        },
-        onTapCancel: () => setState(() => _isPressed = false),
-        child: AnimatedScale(
-          scale: _isPressed ? 0.95 : 1.0,
-          duration: const Duration(milliseconds: 100),
-          child: ElevatedButton(
-            onPressed: onTap,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: color,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(text),
-          ),
-        ),
-      );
-    },
-  );
-}
-
-
-  /// ================= TABLE =================
+    return ElevatedButton(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white),
+      child: Text(text),
+    );
+  }
 
   Widget _tableHeader(List<String> teams) {
     return Container(
@@ -196,9 +172,9 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          _cell("السؤال", flex: 1, bold: true),
-          for (final team in teams) _cell(team, flex: 2, bold: true),
-          _cell("إجراءات", flex: 1, bold: true),
+          _cell("السؤال", width: 80, bold: true),
+          for (final team in teams) _cell(team, width: 140, bold: true),
+          _cell("إجراءات", width: 130, bold: true),
         ],
       ),
     );
@@ -211,16 +187,13 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
     required bool isPreview,
   }) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
-      ),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade300))),
       child: Row(
         children: [
-          _cell("${index + 1}", flex: 1),
-          for (int i = 0; i < teams.length; i++)
-            _scoreCell(cubit, index, i, isPreview),
-          Expanded(
-            flex: 1,
+          _cell("${index + 1}", width: 80),
+          for (int i = 0; i < teams.length; i++) _scoreCell(cubit, index, i, isPreview),
+          SizedBox(
+            width: 130,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -244,8 +217,10 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
   }
 
   Widget _scoreCell(CounterCubit cubit, int row, int col, bool isPreview) {
-    return Expanded(
-      flex: 2,
+    final value = isPreview ? 0 : cubit.scoreTable[row][col];
+
+    return SizedBox(
+      width: 140,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -255,25 +230,14 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
                 ? null
                 : () {
                     if (cubit.scoreTable[row][col] > 0) {
-                      cubit.updateScore(
-                        row,
-                        col,
-                        cubit.scoreTable[row][col] - 1,
-                      );
+                      cubit.updateScore(row, col, cubit.scoreTable[row][col] - 1);
                     }
                   },
           ),
-          Text(
-            isPreview ? "0" : "${cubit.scoreTable[row][col]}",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text('$value', style: const TextStyle(fontWeight: FontWeight.bold)),
           IconButton(
             icon: const Icon(Icons.add, size: 18),
-            onPressed: isPreview
-                ? null
-                : () {
-                    cubit.updateScore(row, col, cubit.scoreTable[row][col] + 1);
-                  },
+            onPressed: isPreview ? null : () => cubit.updateScore(row, col, cubit.scoreTable[row][col] + 1),
           ),
         ],
       ),
@@ -286,34 +250,28 @@ class _ResultsTableWidgetState extends State<ResultsTableWidget> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          _cell("المجموع", flex: 1, bold: true),
+          _cell("المجموع", width: 80, bold: true),
           for (int i = 0; i < teams.length; i++)
-            _cell(
-              isEmpty ? "0" : "${widget.getTotalScore(i)}",
-              flex: 2,
-              bold: true,
-            ),
-          const Expanded(flex: 1, child: SizedBox()),
+            _cell(isEmpty ? "0" : "${widget.getTotalScore(i)}", width: 140, bold: true),
+          const SizedBox(width: 130),
         ],
       ),
     );
   }
 
-  Widget _cell(String text, {required int flex, bool bold = false}) {
-    return Expanded(
-      flex: flex,
+  Widget _cell(String text, {required double width, bool bold = false}) {
+    return SizedBox(
+      width: width,
       child: Center(
         child: Text(
           text,
-          style: TextStyle(
-            fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal),
         ),
       ),
     );
   }
-
-  // ================= HELPERS =================
 
   void _showAlert(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(

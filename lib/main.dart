@@ -10,8 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Set API usage to true since we're using MySQL
-  DatabaseHelper.useApi = true;
-  
+ 
   runApp(const PointsCounterApp());
 }
 
